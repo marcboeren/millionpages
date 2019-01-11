@@ -202,3 +202,30 @@ For example, your `theme` folder...
 _experimental_
 
 If we make a word list (and combined word list) and publish it as a json file with each entry pointing to the canonical url, we can use javascript to build autocomplete search. If the number of words or pages get very large, we can split this index in multiple files, one for each start letter for example. If we put this file in a `_api` folder in the generated site, it can't clash with other names because underscored files and folders aren't published.
+
+
+## Running millionpages:
+
+You'll need Python 3.7 at least, create a virtual environment, and pip install the requirements.
+
+Change to the directory containing the `site`, `theme`, and `upload-generated-site` folders.
+
+If you've used `app` as a subfolder for your website source, where millionpages is located, and your virtual environment is in a subfolder thereof, then do:
+
+    source app/py37/bin/activate
+    python app/index.py
+
+I'm on a Mac, and to prevent it going to sleep, I use `caffeinate`, so that last command would look like this:
+
+    caffeinate -i python app/index.py
+
+That will generate the first version of the site to the upload folder, and it will serve that content on port 10002 (1000 squared is one million, clever, no?), so go to [http://localhost:10002](http://localhost:10002). It's running on `0.0.0.0` so reachable from elsewhere in the network too.
+
+It's also watching for changes in the `site` and `theme` folders, and will regenerate for every change.
+
+Have fun, and feedback is always welcome.
+
+
+
+
+
