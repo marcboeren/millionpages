@@ -1,0 +1,14 @@
+aiofiles==0.4.0
+argh==0.26.2
+httptools==0.0.11
+Jinja2==2.10
+Markdown==3.0.1
+MarkupSafe==1.1.0
+multidict==4.5.2
+pathtools==0.1.2
+PyYAML==3.13
+sanic==0.8.3
+ujson==1.35
+uvloop==0.11.3
+watchdog==0.9.0
+websockets==5.0.1
