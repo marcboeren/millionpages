@@ -1,7 +1,7 @@
 
 # millionpages
 
-version 0.0001, concept
+version 0.01, first working version
 
 ## static site generator
 
