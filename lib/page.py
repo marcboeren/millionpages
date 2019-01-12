@@ -44,7 +44,7 @@ class Page:
         self.path = path
         if not path.startswith("/"):
             self.path = "/" + path
-        pathparts = self.path.split("/")
-        self.name = pathparts.pop()
+        pathlist = self.path.split("/")
+        self.name = pathlist.pop()
         self.config = config
         self.content = content
