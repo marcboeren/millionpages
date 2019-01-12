@@ -217,17 +217,17 @@ If we make a word list (and combined word list) and publish it as a json file wi
 ## Running millionpages:
 
 You'll need Python 3.7 at least, create a virtual environment, and pip install the requirements.
+Let's say, for the upcoming examples, that you've installed millionpages in `~/millionpages` and the virtual environment in `~/millionpages/py37`, and your website source is in `~/websites/www.example.com`.
 
-Change to the directory containing the `site`, `theme`, and `upload-generated-site` folders.
+Change to the directory containing the `site`, `theme`, and `upload-generated-site` folders, start the virtual environment, and start running millionpages:
 
-If you've used `app` as a subfolder for your website source, where millionpages is located, and your virtual environment is in a subfolder thereof, then do:
-
-    source app/py37/bin/activate
-    python app/index.py
+    cd ~/websites/www.example.com
+    source ~/millionpages/py37/bin/activate
+    python ~/millionpages/index.py
 
 I'm on a Mac, and to prevent it going to sleep, I use `caffeinate`, so that last command would look like this:
 
-    caffeinate -i python app/index.py
+    caffeinate -i python ~/millionpages/index.py
 
 That will generate the first version of the site to the upload folder, and it will serve that content on port 10002 (1000 squared is one million, clever, no?), so go to [http://localhost:10002](http://localhost:10002). It's running on `0.0.0.0` so reachable from elsewhere in the network too.
 
