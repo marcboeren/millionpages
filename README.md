@@ -152,7 +152,7 @@ Template variables look like `{{ page.config.title }}`. For the page, all parame
 Besides in templates, you can use template variables in front-matter [note: not implemented yet] (properly quoted, because `{}` characters have special meaning in yaml), in markdown content (with `config` as the main context, and also `site`, `menu`, and `path` contexts), and in index configuration files (only a `group` context).
 
 
-### image resizing [note: not implemented yet]
+### image resizing
 
 In a responsive design (or any design, really) you'll need multiple versions of the same image, for example a thumbnail and a hero, or a phone and desktop variant. Millionpages supports image resizing so you can work from a single, high resolution original.
 
@@ -160,9 +160,9 @@ In the templates, you can either specify an image by path (`/images/hobbes.png`)
 
 Note we said 400 points, not pixels. For high resolution devices, the actual pixels will be a multiple of the points. Think of points as the @1x version, and use that in all the templates. High resolution versions will be created and used automatically, up to a maximum of the original (means we never scale up, only down).
 
-The `imageattrs` returns a string with a set of attributes that is used on the `img` element, the attribute names are `src`, `srcset`, and `sizes` [note: rethink this since sizes can be @media dependent, so we may need a list of widths to go into the `imageattrs` filter]. The string will start and end with a space to prevent possible errors.
+The `imageattrs` returns a string with a set of attributes that is used on the `img` element, the attribute names are `src` and `srcset`, you'll have to set `sizes` yourself [note: rethink this since sizes can be @media dependent, so we may need a list of widths to go into the `imageattrs` filter]. The string will start and end with a space to prevent possible errors.
 
-Usage example: `<img class="tile" alt="A good descrtiption" {{ page.config.image|imageattrs(400) }} />`
+Usage example: `<img class="tile" alt="A good descrtiption" {{ page.config.image|imageattrs(400) }} sizes="400px" />`
 
 The generated images will have their filenames changed to include the width and height info, for example `/images/hobbes@400w300h.png`. So, please don't use an `@`-sign somewhere in the name, who knows what horrible scenarios might ensue.
 

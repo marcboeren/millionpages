@@ -5,6 +5,7 @@ from .page import make_page
 from .menu import make_menu, Menu
 from .error import Error
 from .group import Group
+from .imageattrs import make_imageattrs
 
 
 class MillionPages:
@@ -27,6 +28,7 @@ class MillionPages:
             trim_blocks=True,
             lstrip_blocks=True,
         )
+        self.jinja.filters["imageattrs"] = make_imageattrs(self)
 
     def go(self):
         self.clear_generated_site()
