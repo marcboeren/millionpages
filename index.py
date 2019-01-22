@@ -8,6 +8,10 @@ from urllib.parse import unquote
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+import multiprocessing
+import queue
+import time
+
 from lib.tools import parse
 from lib.millionpages import MillionPages
 
@@ -49,17 +53,31 @@ millionpages = MillionPages(
     siteconfig, title, sitepath, themepath, templatesfolder, exportpath
 )
 
-
+# we'll put any fs events in the queue
 class MillionPagesFileSystemEventHandler(FileSystemEventHandler):
+    def __init__(self, queue):
+        self.queue = queue
+
     def on_any_event(self, event):
-        print(event.src_path)
-        millionpages.go()
+        self.queue.put(event)
 
 
-event_handler = MillionPagesFileSystemEventHandler()
-observer = Observer()
-observer.schedule(event_handler, sitepath, recursive=True)
-observer.schedule(event_handler, themepath, recursive=True)
+# if there's fs events in the queue, consume them all, then execute
+# new site generation
+# this way we won't rerun the generation when there's a bunch of fs events
+# at the same time, e.g. when copying a folder of images into the site folder,
+# or moving files and folders around.
+def buffered_go_millionpages(q, millionpages):
+    while True:
+        event = None
+        try:
+            while True:
+                event = q.get_nowait()
+        except queue.Empty:
+            if event:
+                print(event.src_path)
+                millionpages.go()
+            time.sleep(1)
 
 
 app = Sanic()
@@ -76,7 +94,19 @@ async def static(request):
 
 if __name__ == "__main__":
     millionpages.go()
+
+    q = multiprocessing.Queue()
+    p = multiprocessing.Process(target=buffered_go_millionpages, args=(q, millionpages))
+    p.start()
+
+    event_handler = MillionPagesFileSystemEventHandler(q)
+    observer = Observer()
+    observer.schedule(event_handler, sitepath, recursive=True)
+    observer.schedule(event_handler, themepath, recursive=True)
     observer.start()
+
     app.run(host="0.0.0.0", port=10002)
+
     observer.stop()
     observer.join()
+    p.join()

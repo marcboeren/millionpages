@@ -5,7 +5,6 @@
 
 * smarter handling of filesystem changes
    * based on file type/location
-   * mass delete or copy -> wait, one update
    * image generation with caching
 * cmdline vars for host and portnumber
 * 400x300, 250x188 arguments to imageattr
