@@ -22,3 +22,4 @@
 * rel="alternate" type="application/rss+xml" (index/sitemap.xml)
 * versioning of statics? ie site.yaml version=3, and add ?v=3 or similar in template
 * pagination for index pages
+* look at pathlib for filesystem api
