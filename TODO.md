@@ -7,10 +7,13 @@
    * based on file type/location
    * mass delete or copy -> wait, one update
    * image generation with caching
-* alternate templates
 * cmdline vars for host and portnumber
+* 400x300, 250x188 arguments to imageattr
+* alternate templates
 * image resizing test with png, transparency, gifs
 * image optimization
+* hotspot for imageattr
+* face detection for imageattr
 * perhaps change to imagick for image resizing/optimizing instead of Pillow
 * combine/minify javascript/css
 * search

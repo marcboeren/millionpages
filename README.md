@@ -168,9 +168,16 @@ The generated images will have their filenames changed to include the width and 
 
 _experimental_
 
+For responsive designs, you may need multiple widths for the same image. I want to support this with multiple arguments, where each argument specifies either width, or width-x-heigt, as a string. For the experimental hotspot I'll add a keyword argument, named hotspot (obviously).
+
+    imageattrs(400x300, 250x188)
+    imageattrs(400, 250)
+    imageattrs(400, 250, hotspot=(0.5,0.5))
+    imageattrs(400, 250, hotspot=face)  # highly experimental face detection
+
 When specifying both width and height, you can add a focal point which will be as close to the center of the resized image as possible. The focal point is given as ratios along the horizontal (x-) and vertical (y-) axis of the original image, with the origin in the bottom-left corner (0.0, 0.0) and (1.0, 1.0) is the top-right corner. So the center will always have a value of (0.5, 0.5).
 
-To put this into practice, use the `imageattrs` filter (`{{ page.config.image|imageattrs(400, 300, x=0.5, y=0.5) }}`).
+To put this into practice, use the `imageattrs` filter (`{{ page.config.image|imageattrs(400x300, hotspot=(0.5, 0.5)) }}`).
 
 
 ### minify javascript and stylesheets [note: not implemented yet]
