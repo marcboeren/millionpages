@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from .page import make_page
@@ -22,6 +23,7 @@ class MillionPages:
         self.pages = {}  # path as key
         self.menu = {}
         self.menucount = 0
+        self.output = {}
         self.jinja = Environment(
             loader=FileSystemLoader(os.path.join(self.themepath)),
             autoescape=select_autoescape(["html"]),
@@ -31,7 +33,7 @@ class MillionPages:
         self.jinja.filters["imageattrs"] = make_imageattrs(self)
 
     def go(self):
-        self.clear_generated_site()
+        self.reset_generation()
 
         self.process_theme_folder()
         self.process_site_folder()
@@ -40,26 +42,62 @@ class MillionPages:
 
         self.generate_site()
 
+        self.cleanup_generated_site()
+
         self.print_report()
 
     def print_report(self):
         print()
         print(f"Pages  : {len(self.pages):4}")
         print(f"Indices: {self.menucount:4}")
+        print(f"Output : {len(self.output):4}")
         if self.errors:
             print(f"Errors : {len(self.errors):4}")
             for error in self.errors:
                 print(f"       : {error}")
         else:
             print("Success")
+        # result = {0: " ", 1: "+", 2: "*"}
+        # for output in sorted(self.output):
+        #     path = output[len(self.exportpath) :]
+        #     print(f"{result[self.output[output]]} {path}")
 
-    def clear_generated_site(self):
-        shutil.rmtree(self.exportpath, ignore_errors=False)
+    def reset_generation(self):
+        # shutil.rmtree(self.exportpath, ignore_errors=False)
         os.makedirs(self.exportpath, exist_ok=True)
         self.errors = []
         self.pages = {}
         self.menu = {}
         self.menucount = 0
+        self.output = {}
+        self.starttime = time.time()
+
+    def cleanup_generated_site(self):
+        # walk the upload-folder, compare with self.output
+        # if not in self.output, remove
+        # also clean up empty folders
+        for root, dirs, files in os.walk(self.exportpath, topdown=False):
+            for filename in files:
+                pathname = os.path.join(root, filename)
+                if pathname not in self.output:
+                    os.remove(pathname)
+            for dirname in dirs:
+                pathname = os.path.join(root, dirname)
+                try:
+                    os.rmdir(pathname)
+                except OSError:
+                    pass  # not empty, don't remove
+
+    def destination_needs_writing(self, destination, last_modified):
+        if not os.path.isfile(destination):
+            self.output[destination] = 2
+            return True
+        destinationtimestamp = os.path.getmtime(destination)
+        if destinationtimestamp < last_modified:
+            self.output[destination] = 1
+            return True
+        self.output[destination] = 0
+        return False
 
     def process_theme_folder(self):
         # skip _ files and folders
@@ -74,8 +112,11 @@ class MillionPages:
                 exportpath = os.path.join(
                     self.exportpath, path[1:] if path.startswith("/") else path
                 )
-                os.makedirs(exportpath, exist_ok=True)
-                shutil.copyfile(os.path.join(root, f), os.path.join(exportpath, f))
+                source, destination = os.path.join(root, f), os.path.join(exportpath, f)
+                sourcetimestamp = os.path.getmtime(source)
+                if self.destination_needs_writing(destination, sourcetimestamp):
+                    os.makedirs(exportpath, exist_ok=True)
+                    shutil.copyfile(source, destination)
 
     def process_site_folder(self):
         # read pages and start building menu (without grouping)
@@ -111,8 +152,16 @@ class MillionPages:
                     exportpath = os.path.join(
                         self.exportpath, path[1:] if path.startswith("/") else path
                     )
-                    os.makedirs(exportpath, exist_ok=True)
-                    shutil.copyfile(os.path.join(root, f), os.path.join(exportpath, f))
+                    source, destination = (
+                        os.path.join(root, f),
+                        os.path.join(exportpath, f),
+                    )
+                    sourcetimestamp = os.path.getmtime(source)
+                    if self.destination_needs_writing(destination, sourcetimestamp):
+                        os.makedirs(exportpath, exist_ok=True)
+                        shutil.copyfile(
+                            os.path.join(root, f), os.path.join(exportpath, f)
+                        )
         self.menucount = len(menus)
         for page in self.pages.values():
             page.canonical = self.siteconfig["domain"] + page.path
@@ -212,6 +261,7 @@ class MillionPages:
         try:
             page.content = template.render(**contentcontext)
         except Exception as e:
+            raise
             self.errors.append(f"page content: {path} - {str(e)}")
 
         context = {
@@ -221,15 +271,18 @@ class MillionPages:
             "site": self.siteconfig,
         }
 
-        with open(os.path.join(exportpath, filename), "w") as htmlfile:
-            template = self.jinja.get_template(
-                "/".join((self.templatesfolder, "page.html"))
-            )
-            try:
-                html = template.render(**context)
-                htmlfile.write(html)
-            except Exception as e:
-                self.errors.append(f"page : {path} - {str(e)}")
+        destination = os.path.join(exportpath, filename)
+        if self.destination_needs_writing(destination, self.starttime):
+            with open(os.path.join(exportpath, filename), "w") as htmlfile:
+                template = self.jinja.get_template(
+                    "/".join((self.templatesfolder, "page.html"))
+                )
+                try:
+                    html = template.render(**context)
+                    htmlfile.write(html)
+                except Exception as e:
+                    raise
+                    self.errors.append(f"page : {path} - {str(e)}")
 
     def write_index(self, menu):
         print("+", end="", flush=True)
@@ -253,12 +306,14 @@ class MillionPages:
             "site": self.siteconfig,
         }
 
-        with open(os.path.join(exportpath, filename), "w") as htmlfile:
-            template = self.jinja.get_template(
-                "/".join((self.templatesfolder, "index.html"))
-            )
-            try:
-                html = template.render(**context)
-                htmlfile.write(html)
-            except Exception as e:
-                self.errors.append(f"index: {menu.path} - {str(e)}")
+        destination = os.path.join(exportpath, filename)
+        if self.destination_needs_writing(destination, self.starttime):
+            with open(destination, "w") as htmlfile:
+                template = self.jinja.get_template(
+                    "/".join((self.templatesfolder, "index.html"))
+                )
+                try:
+                    html = template.render(**context)
+                    htmlfile.write(html)
+                except Exception as e:
+                    self.errors.append(f"index: {menu.path} - {str(e)}")

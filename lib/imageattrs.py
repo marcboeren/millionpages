@@ -8,6 +8,7 @@ from jinja2 import Markup
 def make_imageattrs(millionpages):
 
     basepath = millionpages.exportpath
+    imageattrs_cache = {}
 
     def rounddown(f):
         return (int)(math.floor(f) + 0.00001)
@@ -15,35 +16,30 @@ def make_imageattrs(millionpages):
     def generate_image(rgbimg, outputmode, imgtimestamp, filepath, width, height):
         target = os.path.join(basepath, filepath[1:])
 
-        if os.path.isfile(target):
-            targettimestamp = os.path.getmtime(target)
-            if targettimestamp > imgtimestamp:
-                # exists and is newer than source
-                return
+        if millionpages.destination_needs_writing(target, imgtimestamp):
+            img = rgbimg.copy()
+            imgwidth, imgheight = img.size
+            imgratio = 1.0 * imgwidth / imgheight
 
-        img = rgbimg.copy()
-        imgwidth, imgheight = img.size
-        imgratio = 1.0 * imgwidth / imgheight
+            targetratio = 1.0 * width / height
+            if imgratio < targetratio:  # width bound
+                w = width
+                h = rounddown((1.0 * w / imgwidth) * imgheight)
+                yoffset = rounddown((h - height) / 2.0)
+                xoffset = 0
+                destsize = (w, h)
+            else:  # height bound
+                h = height
+                w = rounddown((1.0 * h / imgheight) * imgwidth)
+                xoffset = rounddown((w - width) / 2.0)
+                yoffset = 0
+                destsize = (w, h)
+            img.thumbnail(destsize, Image.ANTIALIAS)  # right scale
+            box = (xoffset, yoffset, width + xoffset, height + yoffset)
+            img = img.crop(box)
 
-        targetratio = 1.0 * width / height
-        if imgratio < targetratio:  # width bound
-            w = width
-            h = rounddown((1.0 * w / imgwidth) * imgheight)
-            yoffset = rounddown((h - height) / 2.0)
-            xoffset = 0
-            destsize = (w, h)
-        else:  # height bound
-            h = height
-            w = rounddown((1.0 * h / imgheight) * imgwidth)
-            xoffset = rounddown((w - width) / 2.0)
-            yoffset = 0
-            destsize = (w, h)
-        img.thumbnail(destsize, Image.ANTIALIAS)  # right scale
-        box = (xoffset, yoffset, width + xoffset, height + yoffset)
-        img = img.crop(box)
-
-        img.convert(outputmode)
-        img.save(target)
+            img.convert(outputmode)
+            img.save(target)
 
     def generate_images(rgbimg, outputmode, imgtimestamp, srcset):
         for entry in srcset:
@@ -57,13 +53,19 @@ def make_imageattrs(millionpages):
 
         imgtimestamp = os.path.getmtime(source)
 
-        img = Image.open(source)
-        imgmode = img.mode
-        if img.mode == "1":
-            img = img.convert("L")
-        elif img.mode == "L":
-            pass
-        img = img.convert("RGB")
+        cached_imginfo = imageattrs_cache.get(filepath, (None, None))
+        if cached_imginfo and cached_imginfo[1] and cached_imginfo[1] >= imgtimestamp:
+            img = cached_imginfo[0]
+            imgmode = img.mode
+        else:
+            img = Image.open(source)
+            imgmode = img.mode
+            if img.mode == "1":
+                img = img.convert("L")
+            elif img.mode == "L":
+                pass
+            img = img.convert("RGB")
+            imageattrs_cache[filepath] = (img, imgtimestamp)
 
         imgwidth, imgheight = img.size
         imgratio = 1.0 * imgwidth / imgheight
