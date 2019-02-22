@@ -6,7 +6,7 @@ from .page import make_page
 from .menu import make_menu, Menu
 from .error import Error
 from .group import Group
-from .imageattrs import make_imageattrs
+from .imagetools import make_imagefilters
 
 
 class MillionPages:
@@ -30,21 +30,30 @@ class MillionPages:
             trim_blocks=True,
             lstrip_blocks=True,
         )
-        self.jinja.filters["imageattrs"] = make_imageattrs(self)
+        imagefilters = make_imagefilters(self)
+        self.jinja.filters["imageurl"] = imagefilters["imageurl"]
+        self.jinja.filters["imageattrs"] = imagefilters["imageattrs"]
 
     def go(self):
-        self.reset_generation()
+        try:
+            self.reset_generation()
 
-        self.process_theme_folder()
-        self.process_site_folder()
+            self.process_theme_folder()
+            self.process_site_folder()
 
-        self.build_menu(self.menu, self.pages.values())
+            self.build_menu(self.menu, self.pages.values())
 
-        self.generate_site()
+            self.generate_site()
 
-        self.cleanup_generated_site()
+            self.cleanup_generated_site()
 
-        self.print_report()
+            self.print_report()
+        except Exception as e:
+            print()
+            print(str(e))
+            print(
+                "Error in building site. Once the error is corrected you can save again to trigger a rebuild."
+            )
 
     def print_report(self):
         print()

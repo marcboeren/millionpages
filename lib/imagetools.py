@@ -5,10 +5,10 @@ from PIL import Image
 from jinja2 import Markup
 
 
-def make_imageattrs(millionpages):
+def make_imagefilters(millionpages):
 
     basepath = millionpages.exportpath
-    imageattrs_cache = {}
+    image_cache = {}
 
     def rounddown(f):
         return (int)(math.floor(f) + 0.00001)
@@ -45,15 +45,15 @@ def make_imageattrs(millionpages):
         for entry in srcset:
             generate_image(rgbimg, outputmode, imgtimestamp, *entry)
 
-    def imageattrs(filepath, width, height=0):
+    def imageurl(filepath, width, height=0):
         source = os.path.join(basepath, filepath[1:])
 
         if not os.path.isfile(source):
-            return Markup(f' src="{filepath}" ')
+            return Markup(f"{urlencode(filepath, safe=safe)}")
 
         imgtimestamp = os.path.getmtime(source)
 
-        cached_imginfo = imageattrs_cache.get(filepath, (None, None))
+        cached_imginfo = image_cache.get(filepath, (None, None))
         if cached_imginfo and cached_imginfo[1] and cached_imginfo[1] >= imgtimestamp:
             img = cached_imginfo[0]
             imgmode = img.mode
@@ -65,7 +65,53 @@ def make_imageattrs(millionpages):
             elif img.mode == "L":
                 pass
             img = img.convert("RGB")
-            imageattrs_cache[filepath] = (img, imgtimestamp)
+            image_cache[filepath] = (img, imgtimestamp)
+
+        imgwidth, imgheight = img.size
+        imgratio = 1.0 * imgwidth / imgheight
+        if not height:
+            reqratio = imgratio
+        else:
+            reqratio = width / height
+
+        def srcsetentry(filepath, width, height=0):
+            if not height:
+                height = rounddown(width / imgratio)
+            name, ext = os.path.splitext(filepath)
+            srcpath = f"{name}@{width}w{height}h{ext}"
+            return (srcpath, width, height)
+
+        srcinfo = srcsetentry(filepath, width, height)
+
+        if not height:
+            generate_image(img, imgmode, imgtimestamp, *srcinfo)
+        else:
+            generate_image(img, imgmode, imgtimestamp, *srcinfo)
+
+        safe = "/@"
+        return Markup(f"{urlencode(srcinfo[0], safe=safe)}")
+
+    def imageattrs(filepath, width, height=0):
+        source = os.path.join(basepath, filepath[1:])
+
+        if not os.path.isfile(source):
+            return Markup(f' src="{filepath}" ')
+
+        imgtimestamp = os.path.getmtime(source)
+
+        cached_imginfo = image_cache.get(filepath, (None, None))
+        if cached_imginfo and cached_imginfo[1] and cached_imginfo[1] >= imgtimestamp:
+            img = cached_imginfo[0]
+            imgmode = img.mode
+        else:
+            img = Image.open(source)
+            imgmode = img.mode
+            if img.mode == "1":
+                img = img.convert("L")
+            elif img.mode == "L":
+                pass
+            img = img.convert("RGB")
+            image_cache[filepath] = (img, imgtimestamp)
 
         imgwidth, imgheight = img.size
         imgratio = 1.0 * imgwidth / imgheight
@@ -115,4 +161,4 @@ def make_imageattrs(millionpages):
             f' src="{urlencode(src[0], safe=safe)}" srcset="{srcsetentries}" '
         )
 
-    return imageattrs
+    return {"imageurl": imageurl, "imageattrs": imageattrs}
