@@ -48,6 +48,7 @@ def make_imagefilters(millionpages):
     def imageurl(filepath, width, height=0):
         source = os.path.join(basepath, filepath[1:])
 
+        safe = "/@"
         if not os.path.isfile(source):
             return Markup(f"{urlencode(filepath, safe=safe)}")
 
