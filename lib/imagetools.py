@@ -2,7 +2,7 @@ import os.path
 import math
 from urllib.parse import quote as urlencode
 from PIL import Image
-from jinja2 import Markup
+from markupsafe import Markup
 
 
 def make_imagefilters(millionpages):
@@ -34,7 +34,7 @@ def make_imagefilters(millionpages):
                 xoffset = rounddown((w - width) / 2.0)
                 yoffset = 0
                 destsize = (w, h)
-            img.thumbnail(destsize, Image.ANTIALIAS)  # right scale
+            img.thumbnail(destsize, Image.LANCZOS)  # right scale
             box = (xoffset, yoffset, width + xoffset, height + yoffset)
             img = img.crop(box)
 

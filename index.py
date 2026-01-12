@@ -8,7 +8,7 @@ from urllib.parse import unquote
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-import multiprocessing
+import multiprocess as mp
 import queue
 import time
 
@@ -80,7 +80,7 @@ def buffered_go_millionpages(q, millionpages):
             time.sleep(1)
 
 
-app = Sanic()
+app = Sanic("lekker")
 
 
 @app.middleware("request")
@@ -91,12 +91,16 @@ async def static(request):
     if os.path.isfile(fullpath):
         return await response.file(fullpath)
 
+@app.get("/ping")
+async def ping(request):
+    return response.text("pong")
+
 
 if __name__ == "__main__":
     millionpages.go()
 
-    q = multiprocessing.Queue()
-    p = multiprocessing.Process(target=buffered_go_millionpages, args=(q, millionpages))
+    q = mp.Queue()
+    p = mp.Process(target=buffered_go_millionpages, args=(q, millionpages))
     p.start()
 
     event_handler = MillionPagesFileSystemEventHandler(q)
