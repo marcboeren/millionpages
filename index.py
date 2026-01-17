@@ -1,19 +1,17 @@
 import os
+import queue
 import sys
-import yaml
-
-from sanic import Sanic
-from sanic import response
+import time
 from urllib.parse import unquote
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 
 import multiprocess as mp
-import queue
-import time
+import yaml
+from sanic import Sanic, response
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
-from lib.tools import parse
 from lib.millionpages import MillionPages
+from lib.tools import parse
 
 basedir = os.getcwd()
 siteconfigpath = os.path.join(basedir, "__site__.yaml")
@@ -53,6 +51,7 @@ millionpages = MillionPages(
     siteconfig, title, sitepath, themepath, templatesfolder, exportpath
 )
 
+
 # we'll put any fs events in the queue
 class MillionPagesFileSystemEventHandler(FileSystemEventHandler):
     def __init__(self, queue):
@@ -91,6 +90,7 @@ async def static(request):
     if os.path.isfile(fullpath):
         return await response.file(fullpath)
 
+
 @app.get("/ping")
 async def ping(request):
     return response.text("pong")
@@ -98,6 +98,9 @@ async def ping(request):
 
 if __name__ == "__main__":
     millionpages.go()
+
+    if len(sys.argv) > 1 and sys.argv[1] == "build":
+        sys.exit()
 
     q = mp.Queue()
     p = mp.Process(target=buffered_go_millionpages, args=(q, millionpages))
