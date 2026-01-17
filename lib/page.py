@@ -1,6 +1,8 @@
 import os.path
-import yaml
+
 import markdown
+import yaml
+
 from .error import Error
 
 

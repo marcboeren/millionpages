@@ -1,12 +1,14 @@
 import os
-import time
 import shutil
+import time
+
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from .page import make_page
-from .menu import make_menu, Menu
+
 from .error import Error
 from .group import Group
 from .imagetools import make_imagefilters
+from .menu import Menu, make_menu
+from .page import make_page
 
 
 class MillionPages:
@@ -176,7 +178,6 @@ class MillionPages:
             page.canonical = self.siteconfig["domain"] + page.path
 
     def build_menu(self, menu, pages):
-
         if "pages" in menu.config:
             if "filter" in menu.config["pages"]:
                 filteredpages = []

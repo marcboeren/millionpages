@@ -1,6 +1,5 @@
 class Group:
     def __init__(self, path, by, config, pages):
-
         self.path = path
         self.by = by
         self.config = config
@@ -16,10 +15,16 @@ class Group:
             if groupby in page.config:
                 if isinstance(page.config[groupby], list):
                     for groupvalue in page.config[groupby]:
+                        if not groupvalue or groupvalue == "None":
+                            continue
                         if groupvalue not in groups:
                             groups[groupvalue] = True
                 else:
-                    if page.config[groupby] not in groups:
+                    if (
+                        page.config[groupby]
+                        and page.config[groupby] != "None"
+                        and page.config[groupby] not in groups
+                    ):
                         groups[page.config[groupby]] = True
         groups = sorted(groups.keys(), reverse=reverse)
 
@@ -52,8 +57,14 @@ class Group:
             if groupby in page.config:
                 if isinstance(page.config[groupby], list):
                     for groupvalue in page.config[groupby]:
+                        if not groupvalue or groupvalue == "None":
+                            continue
                         if groupvalue in self.groups:
                             self.groups[groupvalue].append(page)
                 else:
-                    if page.config[groupby] in self.groups:
+                    if (
+                        page.config[groupby]
+                        and page.config[groupby] != "None"
+                        and page.config[groupby] in self.groups
+                    ):
                         self.groups[page.config[groupby]].append(page)
